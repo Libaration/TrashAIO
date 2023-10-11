@@ -244,58 +244,60 @@ namespace leblanc
 		if (!targetIsMarked && q->is_ready()) {
 			q->cast(target);
 		}
-		e->is_ready() && e->cast(target, hit_chance::high);
-		
+		else if (targetIsMarked && e->is_ready()) {
+			e->cast(target, hit_chance::high);
+		}
+	}
+	void qw_combo(game_object_script& target, bool targetIsMarked, float health, bool canJumpBack) {
+		if (!canJumpBack) {
+			if (!targetIsMarked && q->is_ready()) {
+						q->cast(target);
+					}
+					w->is_ready() && w->cast(target, hit_chance::high);
+
+					if (health >= 20 && canJumpBack) {
+						w->is_ready() && w->cast();
+					}
+		}
+	}
+
+	void harass_target(game_object_script& target) {
+		if (target == nullptr || target_selector->has_spellshield(target)) {
+			return;
+		}
+		const auto health = target->get_health_percent();
+		const auto targetDistance = target->get_distance(myhero);
+		const bool targetIsMarked = target->has_buff(buff_hash("LeblancQMark"));
+		const bool canJumpBack = myhero->has_buff(buff_hash("LeblancW"));
+	}
+
+	void flee() {
+		auto mouse_position = hud->get_hud_input_logic()->get_game_cursor_position();
+		const bool canJumpBack = myhero->has_buff(buff_hash("LeblancW"));
+		const bool canJumpBackMimic = myhero->has_buff(buff_hash("LeblancRW"));
+		if (w->is_ready() || r->is_ready()) {
+			if (!canJumpBack) {
+				w->cast(mouse_position);
+			}
+			if (!canJumpBackMimic) {
+				r->cast(mouse_position);
+			}
+		}
 	}
 
 	void on_update()
 	{
 		if (myhero->is_dead()) return;
-		const bool canJumpBack = myhero->has_buff(buff_hash("LeblancW"));
-
 		if (orbwalker->mixed_mode()) {
 			auto target = target_selector->get_target(q->range(), damage_type::magical);
-
-			// Check if there's no target or the target has a spellshield
-			if (target == nullptr || target_selector->has_spellshield(target)) {
-				return;
-			}
-
-			const auto health = target->get_health_percent();
-			const auto targetDistance = target->get_distance(myhero);
-			const bool targetIsMarked = target->has_buff(buff_hash("LeblancQMark"));
-
-			// Check if the target is within both Q and W ranges
-			if (targetDistance < q->range() && targetDistance < w->range()) {
-				if (!targetIsMarked) {
-					q->is_ready() && q->cast(target);
-				}
-
-				if (!canJumpBack && targetIsMarked) {
-					w->is_ready() && w->cast(target, hit_chance::high);
-				}
-				
-				if (health > 20 && canJumpBack) {
-					w->is_ready() && w->cast();
-				}
-
-				if (health < 30) {
-					qe_combo(target, targetIsMarked);
-				}
-
-				return;
-			}
+			harass_target(target);
+			return;
 		}
 
 
 		if (orbwalker->flee_mode()) {
-			auto mouse_position = hud->get_hud_input_logic()->get_game_cursor_position();
-			if (w->is_ready()) {
-				if (!canJumpBack) {
-					w->cast(mouse_position);
-				}
-				
-			}
+			flee();
+			return;
 		}
 	}
 
