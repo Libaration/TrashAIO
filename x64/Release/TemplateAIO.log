@@ -1,3 +1,0 @@
-﻿C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(531,5): warning MSB8028: The intermediate directory (x64\Release\) contains files shared from another project (TemplateAIO.vcxproj).  This can lead to incorrect clean and rebuild behavior.
-..\plugin_sdk\plugin_sdk.cpp(1538,20): warning : 103 enumeration values not handled in switch: 'Annie', 'Olaf', 'TwistedFate'... [-Wswitch]
-  TemplateAIO.vcxproj -> C:\Users\hatec\Documents\BGX-dev\TemplateAIO\x64\Release\TrashAIO.dll

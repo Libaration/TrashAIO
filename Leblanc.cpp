@@ -240,17 +240,18 @@ namespace leblanc
 	}
 
 
-	bool qe_combo(game_object_script& target) {
-		if (!target->has_buff(buff_hash("LeblancQMark")) && q->is_ready()) {
+	void qe_combo(game_object_script& target, bool targetIsMarked) {
+		if (!targetIsMarked && q->is_ready()) {
 			q->cast(target);
 		}
 		e->is_ready() && e->cast(target, hit_chance::high);
-		return true;
+		
 	}
 
 	void on_update()
 	{
 		if (myhero->is_dead()) return;
+		const bool canJumpBack = myhero->has_buff(buff_hash("LeblancW"));
 
 		if (orbwalker->mixed_mode()) {
 			auto target = target_selector->get_target(q->range(), damage_type::magical);
@@ -262,20 +263,24 @@ namespace leblanc
 
 			const auto health = target->get_health_percent();
 			const auto targetDistance = target->get_distance(myhero);
+			const bool targetIsMarked = target->has_buff(buff_hash("LeblancQMark"));
 
 			// Check if the target is within both Q and W ranges
 			if (targetDistance < q->range() && targetDistance < w->range()) {
-				if (!target->has_buff(buff_hash("LeblancQMark"))) {
+				if (!targetIsMarked) {
 					q->is_ready() && q->cast(target);
 				}
 
-				if (!myhero->has_buff(buff_hash("LeblancW")) && target->has_buff(buff_hash("LeblancQMark"))) {
-					e->is_ready() && e->cast(target, hit_chance::high);
+				if (!canJumpBack && targetIsMarked) {
 					w->is_ready() && w->cast(target, hit_chance::high);
 				}
 				
-				if (health > 20 && myhero->has_buff(buff_hash("LeblancW"))) {
+				if (health > 20 && canJumpBack) {
 					w->is_ready() && w->cast();
+				}
+
+				if (health < 30) {
+					qe_combo(target, targetIsMarked);
 				}
 
 				return;
@@ -286,7 +291,7 @@ namespace leblanc
 		if (orbwalker->flee_mode()) {
 			auto mouse_position = hud->get_hud_input_logic()->get_game_cursor_position();
 			if (w->is_ready()) {
-				if (!myhero->has_buff(buff_hash("LeblancW"))) {
+				if (!canJumpBack) {
 					w->cast(mouse_position);
 				}
 				
