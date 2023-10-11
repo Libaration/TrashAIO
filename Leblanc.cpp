@@ -199,7 +199,7 @@ namespace leblanc
 
 	/*Damages*/
 
-	float q_damages[] = { 65.f, 90.f, 115.f, 140.f, 165.f };
+	float q_damages[] = { 65.f , 90.f , 115.f , 140.f , 165.f  };
 
 	float q_damage(const game_object_script& target)
 	{
@@ -219,7 +219,7 @@ namespace leblanc
 		if (w->level() == 0) return 0.f;
 
 		damage_input input;
-		input.raw_magical_damage = q_damages[q->level() - 1] + myhero->get_total_ability_power() * 0.65f;
+		input.raw_magical_damage = w_damages[w->level() - 1] + myhero->get_total_ability_power() * 0.65f;
 		const float damage = damagelib->calculate_damage_on_unit(myhero, target, &input);
 
 		return damage;
@@ -233,7 +233,7 @@ namespace leblanc
 		if (w->level() == 0) return 0.f;
 
 		damage_input input;
-		input.raw_magical_damage = q_damages[q->level() - 1] + myhero->get_total_ability_power() * 0.35f;
+		input.raw_magical_damage = e_damages[e->level() - 1] + myhero->get_total_ability_power() * 0.35f;
 		const float damage = damagelib->calculate_damage_on_unit(myhero, target, &input);
 
 		return damage;
@@ -261,6 +261,14 @@ namespace leblanc
 		}
 	}
 
+	void two_chains(game_object_script& target) {
+		auto currentR = myhero->get_spell(spellslot::r)->get_name();
+		if (currentR != "LeblancRE" && r->is_ready()) {
+			e->is_ready() && e->cast(target, hit_chance::high);
+			r->cast(target, hit_chance::high);
+		}
+	}
+
 	void harass_target(game_object_script& target) {
 		if (target == nullptr || target_selector->has_spellshield(target)) {
 			return;
@@ -275,6 +283,8 @@ namespace leblanc
 		auto mouse_position = hud->get_hud_input_logic()->get_game_cursor_position();
 		const bool canJumpBack = myhero->has_buff(buff_hash("LeblancW"));
 		const bool canJumpBackMimic = myhero->has_buff(buff_hash("LeblancRW"));
+
+		
 		if (w->is_ready() || r->is_ready()) {
 			if (!canJumpBack) {
 				w->cast(mouse_position);

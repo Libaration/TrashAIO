@@ -3,4 +3,6 @@ Leblanc.cpp(268,14): warning : unused variable 'health' [-Wunused-variable]
 Leblanc.cpp(269,14): warning : unused variable 'targetDistance' [-Wunused-variable]
 Leblanc.cpp(270,14): warning : unused variable 'targetIsMarked' [-Wunused-variable]
 Leblanc.cpp(271,14): warning : unused variable 'canJumpBack' [-Wunused-variable]
+Leblanc.cpp(276,14): warning : unused variable 'canJumpBack' [-Wunused-variable]
+Leblanc.cpp(277,14): warning : unused variable 'canJumpBackMimic' [-Wunused-variable]
   TrashAIO.vcxproj -> C:\Users\hatec\Documents\BGX-dev\TrashAIO\x64\Release\TrashAIO.dll
