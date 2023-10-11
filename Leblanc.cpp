@@ -263,10 +263,11 @@ namespace leblanc
 
 	void two_chains(game_object_script& target) {
 		auto currentR = myhero->get_spell(spellslot::r)->get_name();
-		if (currentR != "LeblancRE" && r->is_ready()) {
-			e->is_ready() && e->cast(target, hit_chance::high);
-			r->cast(target, hit_chance::high);
+		if (currentR == "LeblancRE" && r->is_ready()) {
+			r->is_ready() && r->cast(target, hit_chance::high);
 		}
+		q->is_ready() && q->cast(target);
+		e->is_ready() && e->cast(target, hit_chance::high);
 	}
 
 	void harass_target(game_object_script& target) {
@@ -277,6 +278,7 @@ namespace leblanc
 		const auto targetDistance = target->get_distance(myhero);
 		const bool targetIsMarked = target->has_buff(buff_hash("LeblancQMark"));
 		const bool canJumpBack = myhero->has_buff(buff_hash("LeblancW"));
+		two_chains(target);
 	}
 
 	void flee() {
