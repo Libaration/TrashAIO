@@ -1,0 +1,2 @@
+﻿..\plugin_sdk\plugin_sdk.cpp(1538,20): warning : 103 enumeration values not handled in switch: 'Annie', 'Olaf', 'TwistedFate'... [-Wswitch]
+  TemplateAIO.vcxproj -> C:\Users\hatec\Documents\BGX-dev\TemplateAIO\x64\Debug\TemplateAIO.dll
