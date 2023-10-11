@@ -323,7 +323,13 @@ namespace leblanc
 
 			if (dmg_draws::draw_damage->get_bool() && enemy->is_visible_on_screen())
 			{
-				float q_dmg = q->is_ready() ? q_damage(enemy) : 0.f;
+				float q_dmg = 0.f;
+				if (q->is_ready() && (w->is_ready() || e->is_ready() || r->is_ready())) {
+					q_dmg = q_damage(enemy) * 2;
+				}
+				else {
+					q_dmg = q->is_ready() ? q_damage(enemy) : 0.f;
+				}
 				float w_dmg = w->is_ready() ? w_damage(enemy) : 0.f;
 				float e_dmg = e->is_ready() ? e_damage(enemy) : 0.f;
 				float r_dmg = 0.f;
