@@ -332,7 +332,7 @@ namespace leblanc
 			auto spell = myhero->get_spell(spellslot::r);
 			switch (spell->get_name_hash()) {
 			case spell_hash("LeblancRQ"):
-				// set r back to a target spell
+				r->set_range(q->range());
 				break;
 			case spell_hash("LeblancRW"):
 				r->set_range(w->range());
