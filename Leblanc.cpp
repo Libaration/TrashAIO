@@ -14,11 +14,11 @@ namespace leblanc
 					VARIABLES
 	****************************************/
 
-	script_spell* q        = nullptr;
-	script_spell* w        = nullptr;
-	script_spell* e        = nullptr;
-	script_spell* r        = nullptr;
-	TreeTab*      main_tab = nullptr;
+	script_spell* q = nullptr;
+	script_spell* w = nullptr;
+	script_spell* e = nullptr;
+	script_spell* r = nullptr;
+	TreeTab* main_tab = nullptr;
 
 	/*****************************************
 					MENU STUFF
@@ -31,7 +31,7 @@ namespace leblanc
 		TreeEntry* min_q = nullptr;
 
 		// W Settings
-		TreeEntry* use_w  = nullptr;
+		TreeEntry* use_w = nullptr;
 		TreeEntry* w_mana = nullptr;
 
 		// E Settings
@@ -41,6 +41,12 @@ namespace leblanc
 		TreeEntry* hit_r = nullptr;
 	}
 
+	namespace misc_menu
+	{
+		//Two Chains Settings
+		TreeEntry* wait_for_root = nullptr;
+	}
+
 	namespace harass
 	{
 		// Q Settings
@@ -48,7 +54,7 @@ namespace leblanc
 		TreeEntry* min_q = nullptr;
 
 		// W Settings
-		TreeEntry* use_w  = nullptr;
+		TreeEntry* use_w = nullptr;
 		TreeEntry* w_mana = nullptr;
 
 		// E Settings
@@ -63,8 +69,8 @@ namespace leblanc
 	namespace lane_clear_menu
 	{
 		// W Settings
-		TreeEntry* use_w  = nullptr;
-		TreeEntry* hit_w  = nullptr;
+		TreeEntry* use_w = nullptr;
+		TreeEntry* hit_w = nullptr;
 		TreeEntry* w_mana = nullptr;
 
 		// E Settings
@@ -78,7 +84,7 @@ namespace leblanc
 		TreeEntry* use_q = nullptr;
 
 		// W Settings
-		TreeEntry* use_w  = nullptr;
+		TreeEntry* use_w = nullptr;
 		TreeEntry* w_mana = nullptr;
 
 		// E Settings
@@ -126,6 +132,7 @@ namespace leblanc
 		TreeEntry* semiq = nullptr;
 	}
 
+
 	/*****************************************
 					LOAD/UNLOAD
 	****************************************/
@@ -135,8 +142,8 @@ namespace leblanc
 		// Registering a spells
 		q = plugin_sdk->register_spell(spellslot::q, 699);
 		w = plugin_sdk->register_spell(spellslot::w, 600);
-		e = plugin_sdk->register_spell(spellslot::e, 950.f);
-		r = plugin_sdk->register_spell(spellslot::r, 600);
+		e = plugin_sdk->register_spell(spellslot::e, 950);
+		r = plugin_sdk->register_spell(spellslot::r, 300);
 		q->set_spell_lock(false);
 		w->set_spell_lock(false);
 		e->set_spell_lock(false);
@@ -168,7 +175,14 @@ namespace leblanc
 				dmg_draws::draw_r = damage_settings->add_checkbox("draw_r", "Draw R Damage", true);
 			}
 		}
-	
+
+		const auto misc_settings = main_tab->add_tab("misc", "Misc");
+		{
+			misc_settings->add_separator("two_chains_settings", "-- Two Chains Combo --");
+			misc_menu::wait_for_root = misc_settings->add_checkbox("wait_for_root", "Wait for root before E Mimic", true);
+
+		}
+
 		misc().init();
 		event_handler<events::on_update>::add_callback(on_update);
 		event_handler<events::on_draw>::add_callback(on_env_draw);
@@ -199,7 +213,7 @@ namespace leblanc
 
 	/*Damages*/
 
-	float q_damages[] = { 65.f , 90.f , 115.f , 140.f , 165.f  };
+	float q_damages[] = { 65.f , 90.f , 115.f , 140.f , 165.f };
 
 	float q_damage(const game_object_script& target)
 	{
@@ -251,43 +265,37 @@ namespace leblanc
 	void qw_combo(game_object_script& target, bool targetIsMarked, float health, bool canJumpBack) {
 		if (!canJumpBack) {
 			if (!targetIsMarked && q->is_ready()) {
-						q->cast(target);
-					}
-					w->is_ready() && w->cast(target, hit_chance::high);
+				q->cast(target);
+			}
+			w->is_ready() && w->cast(target, hit_chance::high);
 
-					if (health >= 20 && canJumpBack) {
-						w->is_ready() && w->cast();
-					}
+			if (health >= 20 && canJumpBack) {
+				w->is_ready() && w->cast();
+			}
 		}
 	}
 
 	void two_chains(game_object_script& target) {
-		/*
-		auto currentR = myhero->get_spell(spellslot::r)->get_name();
-		if (currentR == "LeblancRE" && r->is_ready()) {
-			r->cast(target, hit_chance::high);
+		bool wait_for_root = misc_menu::wait_for_root->get_bool();
+		auto chainMimicAvailable = myhero->get_spell(spellslot::r)->get_name() == "LeblancRE";
+		bool targetIsChained = target->has_buff(buff_hash("LeblancE")) || target->has_buff(buff_hash("LeblancRE"));
+		bool targetIsRooted = target->can_move();
 
-		}
-		if (e->is_ready()) {
-			e->cast(target, hit_chance::high);
-		}
-		*/
-		auto currentR = myhero->get_spell(spellslot::r)->get_name();
-		if (currentR == "LeblancRE" && r->is_ready()) {
-			r->cast(target, hit_chance::high);
-			if (target->has_buff(buff_hash("LeblancE")))
-			{
-				e->cast(target, hit_chance::high);
-			}
-		}
-		else if (e->is_ready()) {
-			e->cast(target, hit_chance::high);
-			if (target->has_buff(buff_hash("LeblancE")))
-			{
+		if (!wait_for_root) {
+			console->print("%s", "wait for root is false beginning combo");
+			if (chainMimicAvailable && !e->is_ready()) {
 				r->cast(target, hit_chance::high);
+				targetIsChained&& e->cast(target, hit_chance::high);
+			}
+			else {
+				console->print("%s", "chaimMimic Not Available casting E as normal");
+				e->cast(target, hit_chance::high);
+				targetIsChained&& r->cast(target, hit_chance::high);
 			}
 		}
-		
+
+
+
 	}
 
 	void harass_target(game_object_script& target) {
@@ -306,7 +314,7 @@ namespace leblanc
 		const bool canJumpBack = myhero->has_buff(buff_hash("LeblancW"));
 		const bool canJumpBackMimic = myhero->has_buff(buff_hash("LeblancRW"));
 
-		
+
 		if (w->is_ready() || r->is_ready()) {
 			auto pathfindingDirection = myhero->get_position().extend(mouse_position, 600.f);
 			if (!canJumpBack) {
@@ -320,11 +328,26 @@ namespace leblanc
 
 	void on_update()
 	{
+		if (r->is_ready()) {
+			auto spell = myhero->get_spell(spellslot::r);
+			switch (spell->get_name_hash()) {
+			case spell_hash("LeblancRQ"):
+				// set r back to a target spell
+				break;
+			case spell_hash("LeblancRW"):
+				r->set_range(w->range());
+				r->set_skillshot(0, 240, 1450, {}, skillshot_type::skillshot_circle);
+				break;
+			case spell_hash("LeblancRE"):
+				r->set_range(e->range());
+				r->set_skillshot(0.25f, 80.f, 2000.f, { collisionable_objects::minions, collisionable_objects::yasuo_wall }, skillshot_type::skillshot_line);
+				break;
+			}
+		}
 		if (myhero->is_dead()) return;
 		if (orbwalker->mixed_mode()) {
 			auto target = target_selector->get_target(q->range(), damage_type::magical);
 			harass_target(target);
-			return;
 		}
 
 
