@@ -262,12 +262,32 @@ namespace leblanc
 	}
 
 	void two_chains(game_object_script& target) {
+		/*
 		auto currentR = myhero->get_spell(spellslot::r)->get_name();
 		if (currentR == "LeblancRE" && r->is_ready()) {
-			r->is_ready() && r->cast(target, hit_chance::high);
+			r->cast(target, hit_chance::high);
+
 		}
-		q->is_ready() && q->cast(target);
-		e->is_ready() && e->cast(target, hit_chance::high);
+		if (e->is_ready()) {
+			e->cast(target, hit_chance::high);
+		}
+		*/
+		auto currentR = myhero->get_spell(spellslot::r)->get_name();
+		if (currentR == "LeblancRE" && r->is_ready()) {
+			r->cast(target, hit_chance::high);
+			if (target->has_buff(buff_hash("LeblancE")))
+			{
+				e->cast(target, hit_chance::high);
+			}
+		}
+		else if (e->is_ready()) {
+			e->cast(target, hit_chance::high);
+			if (target->has_buff(buff_hash("LeblancE")))
+			{
+				r->cast(target, hit_chance::high);
+			}
+		}
+		
 	}
 
 	void harass_target(game_object_script& target) {
@@ -288,11 +308,12 @@ namespace leblanc
 
 		
 		if (w->is_ready() || r->is_ready()) {
+			auto pathfindingDirection = myhero->get_position().extend(mouse_position, 600.f);
 			if (!canJumpBack) {
-				w->cast(mouse_position);
+				w->cast(pathfindingDirection);
 			}
 			if (!canJumpBackMimic) {
-				r->cast(mouse_position);
+				r->cast(pathfindingDirection);
 			}
 		}
 	}
