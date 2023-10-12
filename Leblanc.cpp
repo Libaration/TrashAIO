@@ -3,6 +3,8 @@
 #include "Permashow.hpp"
 #include "Others.h"
 #include "Leblanc.h"
+#include <cstring>
+#include <string>
 
 namespace leblanc
 {
@@ -143,7 +145,7 @@ namespace leblanc
 		q = plugin_sdk->register_spell(spellslot::q, 699);
 		w = plugin_sdk->register_spell(spellslot::w, 600);
 		e = plugin_sdk->register_spell(spellslot::e, 950);
-		r = plugin_sdk->register_spell(spellslot::r, 300);
+		r = plugin_sdk->register_spell(spellslot::r, 600);
 		q->set_spell_lock(false);
 		w->set_spell_lock(false);
 		e->set_spell_lock(false);
@@ -277,18 +279,16 @@ namespace leblanc
 
 	void two_chains(game_object_script& target) {
 		bool wait_for_root = misc_menu::wait_for_root->get_bool();
-		auto chainMimicAvailable = myhero->get_spell(spellslot::r)->get_name() == "LeblancRE";
+		auto chainMimicAvailable = myhero->get_spell(spellslot::r)->get_name_hash() == spell_hash("LeblancRE") && r->is_ready();
 		bool targetIsChained = target->has_buff(buff_hash("LeblancE")) || target->has_buff(buff_hash("LeblancRE"));
 		bool targetIsRooted = target->can_move();
 
 		if (!wait_for_root) {
-			console->print("%s", "wait for root is false beginning combo");
 			if (chainMimicAvailable && !e->is_ready()) {
 				r->cast(target, hit_chance::high);
 				targetIsChained&& e->cast(target, hit_chance::high);
 			}
 			else {
-				console->print("%s", "chaimMimic Not Available casting E as normal");
 				e->cast(target, hit_chance::high);
 				targetIsChained&& r->cast(target, hit_chance::high);
 			}
