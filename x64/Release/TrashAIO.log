@@ -1,6 +1,6 @@
 ﻿..\plugin_sdk\plugin_sdk.cpp(1538,20): warning : 103 enumeration values not handled in switch: 'Annie', 'Olaf', 'TwistedFate'... [-Wswitch]
-Leblanc.cpp(309,14): warning : unused variable 'health' [-Wunused-variable]
-Leblanc.cpp(310,14): warning : unused variable 'targetDistance' [-Wunused-variable]
-Leblanc.cpp(311,14): warning : unused variable 'targetIsMarked' [-Wunused-variable]
-Leblanc.cpp(312,14): warning : unused variable 'canJumpBack' [-Wunused-variable]
+Leblanc.cpp(312,14): warning : unused variable 'health' [-Wunused-variable]
+Leblanc.cpp(313,14): warning : unused variable 'targetDistance' [-Wunused-variable]
+Leblanc.cpp(314,14): warning : unused variable 'targetIsMarked' [-Wunused-variable]
+Leblanc.cpp(315,14): warning : unused variable 'canJumpBack' [-Wunused-variable]
   TrashAIO.vcxproj -> C:\Users\hatec\Documents\BGX-dev\TrashAIO\x64\Release\TrashAIO.dll

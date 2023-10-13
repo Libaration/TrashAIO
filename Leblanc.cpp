@@ -279,7 +279,7 @@ namespace leblanc
 
 	void two_chains(game_object_script& target) {
 		bool waitForRoot = misc_menu::wait_for_root->get_bool();
-		auto chainMimicAvailable = myhero->get_spell(spellslot::r)->get_name_hash() == spell_hash("LeblancRE") && r->is_ready();
+		auto chainMimicAvailable = myhero->get_spell(spellslot::r)->get_name_hash() == spell_hash("LeblancRE");
 		auto timeRemainingOnE = target->get_buff_time_left(buff_hash("LeblancE"));
 		auto timeRemainingOnRE = target->get_buff_time_left(buff_hash("LeblancRE"));
 
@@ -287,7 +287,15 @@ namespace leblanc
 			if (e->is_ready() && timeRemainingOnRE == 0) {
 				e->cast(target, hit_chance::high);
 			}
-			if (r->is_ready() && chainMimicAvailable && !e->is_ready() && timeRemainingOnE != 0 && timeRemainingOnE < 0.6) {
+			if (r->is_ready() && chainMimicAvailable && timeRemainingOnE != 0 && timeRemainingOnE < 0.6) {
+				r->cast(target, hit_chance::high);
+			}
+		}
+		else if (!waitForRoot) {
+			if (e->is_ready()) {
+				e->cast(target, hit_chance::high);
+			}
+			if (r->is_ready() && chainMimicAvailable) {
 				r->cast(target, hit_chance::high);
 			}
 		}
