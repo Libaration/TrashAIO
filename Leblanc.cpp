@@ -282,13 +282,14 @@ namespace leblanc
 		auto chainMimicAvailable = myhero->get_spell(spellslot::r)->get_name_hash() == spell_hash("LeblancRE");
 		auto timeRemainingOnE = target->get_buff_time_left(buff_hash("LeblancE"));
 		auto timeRemainingOnRE = target->get_buff_time_left(buff_hash("LeblancRE"));
+		bool targetIsChained = target->has_buff(buff_hash("LeblancE")) || target->has_buff(buff_hash("LeblancRE"));
 
 		if (waitForRoot) {
 			if (e->is_ready() && timeRemainingOnRE == 0) {
 				e->cast(target, hit_chance::high);
 			}
 			if (r->is_ready() && chainMimicAvailable && timeRemainingOnE != 0 && timeRemainingOnE < 0.6) {
-				r->cast(target, hit_chance::high);
+				targetIsChained&& r->cast(target, hit_chance::high);
 			}
 		}
 		else if (!waitForRoot) {
@@ -296,7 +297,7 @@ namespace leblanc
 				e->cast(target, hit_chance::high);
 			}
 			if (r->is_ready() && chainMimicAvailable) {
-				r->cast(target, hit_chance::high);
+				targetIsChained&& r->cast(target, hit_chance::high);
 			}
 		}
 
