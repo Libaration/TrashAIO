@@ -278,25 +278,24 @@ namespace leblanc
 	}
 
 	void two_chains(game_object_script& target) {
-		bool wait_for_root = misc_menu::wait_for_root->get_bool();
+		bool waitForRoot = misc_menu::wait_for_root->get_bool();
 		auto chainMimicAvailable = myhero->get_spell(spellslot::r)->get_name_hash() == spell_hash("LeblancRE") && r->is_ready();
-		bool targetIsChained = target->has_buff(buff_hash("LeblancE")) || target->has_buff(buff_hash("LeblancRE"));
-		bool targetIsRooted = target->can_move();
+		auto timeRemainingOnE = target->get_buff_time_left(buff_hash("LeblancE"));
+		auto timeRemainingOnRE = target->get_buff_time_left(buff_hash("LeblancRE"));
 
-		if (!wait_for_root) {
-			if (chainMimicAvailable && !e->is_ready()) {
-				r->cast(target, hit_chance::high);
-				targetIsChained&& e->cast(target, hit_chance::high);
-			}
-			else {
+		if (waitForRoot) {
+			if (e->is_ready() && timeRemainingOnRE == 0) {
 				e->cast(target, hit_chance::high);
-				targetIsChained&& r->cast(target, hit_chance::high);
+			}
+			if (r->is_ready() && chainMimicAvailable && !e->is_ready() && timeRemainingOnE != 0 && timeRemainingOnE < 0.6) {
+				r->cast(target, hit_chance::high);
 			}
 		}
 
-
-
 	}
+
+
+
 
 	void harass_target(game_object_script& target) {
 		if (target == nullptr || target_selector->has_spellshield(target)) {
