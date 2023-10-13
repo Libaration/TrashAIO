@@ -11,6 +11,11 @@ namespace leblanc
 	void on_update();
 	void on_draw();
 	void on_env_draw();
+	void chainOnCCLoop();
+	void updateUltimateSpell();
+	void harass_target();
+	void flee();
+	void two_chains(game_object_script& target);
 
 	/*****************************************
 					VARIABLES
@@ -278,6 +283,7 @@ namespace leblanc
 	}
 
 	void two_chains(game_object_script& target) {
+		console->print("beginning of 2 chains func");
 		bool waitForRoot = misc_menu::wait_for_root->get_bool();
 		auto chainMimicAvailable = myhero->get_spell(spellslot::r)->get_name_hash() == spell_hash("LeblancRE");
 		auto timeRemainingOnE = target->get_buff_time_left(buff_hash("LeblancE"));
@@ -285,10 +291,10 @@ namespace leblanc
 		bool targetIsChained = target->has_buff(buff_hash("LeblancE")) || target->has_buff(buff_hash("LeblancRE"));
 
 		if (waitForRoot) {
-			if (e->is_ready() && timeRemainingOnRE == 0) {
+			if (e->is_ready() && !(timeRemainingOnRE > 0) && !(timeRemainingOnE > 0)) {
 				e->cast(target, hit_chance::high);
 			}
-			if (r->is_ready() && chainMimicAvailable && timeRemainingOnE != 0 && timeRemainingOnE < 0.6) {
+			if (r->is_ready() && !e->is_ready() && chainMimicAvailable && !(timeRemainingOnRE > 0) && timeRemainingOnE > 0 && timeRemainingOnE < 0.6) {
 				targetIsChained&& r->cast(target, hit_chance::high);
 			}
 		}
@@ -300,13 +306,13 @@ namespace leblanc
 				targetIsChained&& r->cast(target, hit_chance::high);
 			}
 		}
-
 	}
 
 
 
 
-	void harass_target(game_object_script& target) {
+	void harass_target() {
+		auto target = target_selector->get_target(q->range(), damage_type::magical);
 		if (target == nullptr || target_selector->has_spellshield(target)) {
 			return;
 		}
@@ -334,8 +340,7 @@ namespace leblanc
 		}
 	}
 
-	void on_update()
-	{
+	void updateUltimateSpell() {
 		if (r->is_ready()) {
 			auto spell = myhero->get_spell(spellslot::r);
 			switch (spell->get_name_hash()) {
@@ -352,10 +357,27 @@ namespace leblanc
 				break;
 			}
 		}
+	}
+
+	void chainOnCCLoop() {
+		for (auto&& target : entitylist->get_enemy_heroes())
+		{
+			if (target != nullptr && myhero->get_distance(target->get_position()) <= e->range()) {
+				auto timeLeft = target->get_immovibility_time();
+				if (timeLeft > 0) {
+					e->is_ready() && e->cast(target, hit_chance::high);
+				}
+			}
+		}
+	}
+	void on_update()
+	{
 		if (myhero->is_dead()) return;
+		updateUltimateSpell();
+		chainOnCCLoop();
 		if (orbwalker->mixed_mode()) {
-			auto target = target_selector->get_target(q->range(), damage_type::magical);
-			harass_target(target);
+			console->print("Starting harass target");
+			harass_target();
 		}
 
 
