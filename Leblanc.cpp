@@ -325,8 +325,8 @@ namespace leblanc
 				curveFactor = 0.5 - pow((distanceToTarget - 400) / 400.0, exponent);
 			}
 			else {
-				double exponent = 20.0;  // Adjust this exponent to fine-tune the curve
-				curveFactor = 15.0 - pow((distanceToTarget - 800) / 150.0, exponent);
+				double exponent = 5.0;  // Adjust this exponent to fine-tune the curve
+				curveFactor = 0.5 - pow((distanceToTarget - 800) / 150.0, exponent);
 			}
 
 			baseCastingTime += curveFactor * (distanceToTarget / e->speed);
