@@ -350,3 +350,4 @@ MigrationBackup/
 .ionide/
 .vs
 x64/
+x64/*
