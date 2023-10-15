@@ -1,4 +1,3 @@
-#include "../plugin_sdk/plugin_sdk.hpp"
 #include "Helpers.h"
 #include "Permashow.hpp"
 #include "Others.h"
@@ -8,14 +7,14 @@
 
 namespace leblanc
 {
-	void on_update();
-	void on_draw();
-	void on_env_draw();
-	void chainOnCCLoop();
-	void updateUltimateSpell();
-	void harass_target();
-	void flee();
-	void two_chains(game_object_script& target);
+	struct State {
+		float lastCast;
+		float lastECastTime;
+		float lastRCastTime;
+		bool hasCasted;
+	};
+	State state = { 0, false };
+
 
 	/*****************************************
 					VARIABLES
@@ -138,8 +137,24 @@ namespace leblanc
 	{
 		TreeEntry* semiq = nullptr;
 	}
+	float getPing()
+	{
+		return ping->get_ping() / 1000;
+	}
+	void on_cast_spell(spellslot spellSlot, game_object_script target, vector& pos, vector& pos2, bool isCharge, bool* process)
+	{
+		state.lastCast = gametime->get_time() + 0.133 + getPing();
+	}
 
+	void on_process_spell_cast(game_object_script sender, spell_instance_script spell)
+	{
+		if (sender->get_handle() == myhero->get_handle()) state.lastCast = 0;
+	}
 
+	void setState() {
+		// reset hasCasted on every update
+		state.hasCasted = false;
+	}
 	/*****************************************
 					LOAD/UNLOAD
 	****************************************/
@@ -194,6 +209,8 @@ namespace leblanc
 		event_handler<events::on_update>::add_callback(on_update);
 		event_handler<events::on_draw>::add_callback(on_env_draw);
 		event_handler<events::on_draw>::add_callback(on_draw);
+		event_handler<events::on_cast_spell>::add_callback(on_cast_spell, event_prority::high);
+		event_handler<events::on_process_spell_cast>::add_callback(on_process_spell_cast, event_prority::high);
 
 	}
 
@@ -212,6 +229,8 @@ namespace leblanc
 		event_handler<events::on_preupdate>::remove_handler(on_update);
 		event_handler<events::on_preupdate>::remove_handler(on_env_draw);
 		event_handler<events::on_preupdate>::remove_handler(on_draw);
+		event_handler<events::on_cast_spell >::remove_handler(on_cast_spell);
+		event_handler<events::on_process_spell_cast >::remove_handler(on_process_spell_cast);
 
 
 		// Destroy permashow
@@ -282,37 +301,67 @@ namespace leblanc
 		}
 	}
 
-	void two_chains(game_object_script& target) {
-		console->print("beginning of 2 chains func");
+	bool two_chains(game_object_script& target) {
 		bool waitForRoot = misc_menu::wait_for_root->get_bool();
 		auto chainMimicAvailable = myhero->get_spell(spellslot::r)->get_name_hash() == spell_hash("LeblancRE");
+		auto ultAvailableNoMimicChosen = myhero->get_spell(spellslot::r)->get_name_hash() == spell_hash("LeblancR");
 		auto timeRemainingOnE = target->get_buff_time_left(buff_hash("LeblancE"));
 		auto timeRemainingOnRE = target->get_buff_time_left(buff_hash("LeblancRE"));
-		bool targetIsChained = target->has_buff(buff_hash("LeblancE")) || target->has_buff(buff_hash("LeblancRE"));
+		bool targetIsChained = target->has_buff(buff_hash("LeblancE"));
+
 
 		if (waitForRoot) {
-			if (e->is_ready() && !(timeRemainingOnRE > 0) && !(timeRemainingOnE > 0)) {
-				e->cast(target, hit_chance::high);
+			double distanceToTarget = myhero->get_distance(target->get_position());
+			double baseCastingTime = e->delay + 0.133 + getPing();
+
+			double curveFactor;
+
+			if (distanceToTarget < 400) {
+				double exponent = 6.0;  // Adjust this exponent to fine-tune the curve
+				curveFactor = 5.0 - pow(distanceToTarget / 400.0, exponent);
 			}
-			if (r->is_ready() && !e->is_ready() && chainMimicAvailable && !(timeRemainingOnRE > 0) && timeRemainingOnE > 0 && timeRemainingOnE < 0.6) {
-				targetIsChained&& r->cast(target, hit_chance::high);
+			else if (distanceToTarget < 800) {
+				double exponent = 5.0;  // Adjust this exponent to fine-tune the curve
+				curveFactor = 0.5 - pow((distanceToTarget - 400) / 400.0, exponent);
+			}
+			else {
+				double exponent = 20.0;  // Adjust this exponent to fine-tune the curve
+				curveFactor = 15.0 - pow((distanceToTarget - 800) / 150.0, exponent);
+			}
+
+			baseCastingTime += curveFactor * (distanceToTarget / e->speed);
+
+			if (state.lastECastTime == 0) {
+				e->cast(target, hit_chance::high);
+				if (targetIsChained) {
+					state.lastECastTime = gametime->get_time() + baseCastingTime;
+				}
+			}
+			else if (gametime->get_time() - state.lastECastTime > 0.15) {
+				if (r->is_ready() && ultAvailableNoMimicChosen) {
+					targetIsChained&& r->cast(target, hit_chance::high);
+					state.lastECastTime = 0;
+					state.hasCasted = true;
+				}
+				else if (r->is_ready() && chainMimicAvailable) {
+					targetIsChained&& r->cast(target, hit_chance::high);
+					state.lastECastTime = 0;
+					state.hasCasted = true;
+				}
+				else if (r->is_ready() && (!chainMimicAvailable || !ultAvailableNoMimicChosen)) {
+					state.lastECastTime = 0;
+				}
 			}
 		}
-		else if (!waitForRoot) {
-			if (e->is_ready()) {
-				e->cast(target, hit_chance::high);
-			}
-			if (r->is_ready() && chainMimicAvailable) {
-				targetIsChained&& r->cast(target, hit_chance::high);
-			}
-		}
+		return false;
 	}
 
 
 
 
 	void harass_target() {
-		auto target = target_selector->get_target(q->range(), damage_type::magical);
+		if (state.hasCasted || state.lastCast > gametime->get_time()) return;
+		auto target = target_selector->get_target(e->range(), damage_type::magical);
 		if (target == nullptr || target_selector->has_spellshield(target)) {
 			return;
 		}
@@ -321,21 +370,24 @@ namespace leblanc
 		const bool targetIsMarked = target->has_buff(buff_hash("LeblancQMark"));
 		const bool canJumpBack = myhero->has_buff(buff_hash("LeblancW"));
 		two_chains(target);
+		return;
 	}
 
 	void flee() {
 		auto mouse_position = hud->get_hud_input_logic()->get_game_cursor_position();
-		const bool canJumpBack = myhero->has_buff(buff_hash("LeblancW"));
-		const bool canJumpBackMimic = myhero->has_buff(buff_hash("LeblancRW"));
+		bool canJumpBack = myhero->has_buff(buff_hash("LeblancW"));
+		bool canJumpBackMimic = myhero->has_buff(buff_hash("LeblancRW"));
 
 
 		if (w->is_ready() || r->is_ready()) {
 			auto pathfindingDirection = myhero->get_position().extend(mouse_position, 600.f);
 			if (!canJumpBack) {
-				w->cast(pathfindingDirection);
+				w->is_ready() && w->cast(pathfindingDirection);
+				canJumpBack = true;
 			}
 			if (!canJumpBackMimic) {
-				r->cast(pathfindingDirection);
+				r->is_ready() && r->cast(pathfindingDirection);
+				canJumpBackMimic = true;
 			}
 		}
 	}
@@ -364,7 +416,8 @@ namespace leblanc
 		{
 			if (target != nullptr && myhero->get_distance(target->get_position()) <= e->range()) {
 				auto timeLeft = target->get_immovibility_time();
-				if (timeLeft > 0) {
+				auto isStunnedByMe = !target->has_buff(buff_hash("LeblancE")) || !target->has_buff(buff_hash("LeblancRE"));
+				if (timeLeft > 0 && !isStunnedByMe) {
 					e->is_ready() && e->cast(target, hit_chance::high);
 				}
 			}
@@ -373,10 +426,10 @@ namespace leblanc
 	void on_update()
 	{
 		if (myhero->is_dead()) return;
+		setState();
 		updateUltimateSpell();
-		chainOnCCLoop();
+		/*	chainOnCCLoop();*/
 		if (orbwalker->mixed_mode()) {
-			console->print("Starting harass target");
 			harass_target();
 		}
 
